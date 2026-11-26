@@ -65,12 +65,16 @@
     <aside class="home-actions">
       <button type="button" class="button primary" id="project-new" disabled>新建编辑</button>
       <button type="button" class="button" id="project-open" disabled>打开图片</button>
+      <button type="button" class="button" id="project-clear-recent" disabled>清空最近使用项</button>
     </aside>
     <div class="home-content">
       <h2 id="home-title">片边工作台</h2>
       <h3>最近使用项</h3>
       <p id="home-status" role="status">正在读取本机项目…</p>
       <div class="recent-projects" id="recent-projects"></div>
+      <div id="recent-context" class="recent-context" hidden>
+        <button type="button" class="button" id="recent-remove">从最近使用项移除</button>
+      </div>
     </div>
   </section>
   <main class="page" hidden>
