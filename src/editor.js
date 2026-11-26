@@ -3320,8 +3320,62 @@ function showProjectPage(home) {
   if (!home) queuePreview();
 }
 
+const recentContext = byId("recent-context");
+let recentContextTarget;
+
+function closeRecentContext(restoreFocus = false) {
+  if (restoreFocus) recentContextTarget?.button.focus();
+  recentContextTarget = null;
+  recentContext.hidden = true;
+}
+
+function openRecentContext(item, button, x, y) {
+  recentContextTarget = {id:item.id, button};
+  recentContext.hidden = false;
+  recentContext.style.left = clamp(x, 4, Math.max(4, innerWidth - recentContext.offsetWidth - 4)) + "px";
+  recentContext.style.top = clamp(y, 4, Math.max(4, innerHeight - recentContext.offsetHeight - 4)) + "px";
+  byId("recent-remove").focus();
+}
+
+async function removeRecentItems(id) {
+  if (switchingProject || restoringSession || !recentProjects.length) return;
+  const home = byId("project-home");
+  switchingProject = true;
+  home.inert = true;
+  closeRecentContext();
+  try {
+    const remaining = id ? recentProjects.filter(item => item.id !== id) : [];
+    await workspaceValue("recent-projects", remaining);
+    recentProjects = remaining;
+    renderRecentProjects();
+    byId("home-status").textContent = id ? "已移除选中的最近使用项。" : "已清空最近使用项。";
+  } catch {
+    byId("home-status").textContent = "无法更新最近使用项，请重试。";
+  } finally {
+    switchingProject = false;
+    home.inert = false;
+    (byId("recent-projects").firstElementChild ?? byId("project-open")).focus();
+  }
+}
+
+byId("recent-remove").onclick = () => {
+  if (recentContextTarget) removeRecentItems(recentContextTarget.id);
+};
+byId("project-clear-recent").onclick = () => removeRecentItems();
+document.addEventListener("pointerdown", event => {
+  if (!recentContext.hidden && !recentContext.contains(event.target)) closeRecentContext();
+});
+recentContext.addEventListener("keydown", event => {
+  if (event.key !== "Escape") return;
+  event.preventDefault();
+  closeRecentContext(true);
+});
+window.addEventListener("resize", () => closeRecentContext());
+
 function renderRecentProjects() {
+  closeRecentContext();
   const list = byId("recent-projects");
+  byId("project-clear-recent").disabled = !recentProjects.length;
   byId("home-status").textContent = recentProjects.length ? "" : "暂无最近项目。打开图片即可开始。";
   list.replaceChildren(...recentProjects.map(item => {
     const button = document.createElement("button");
@@ -3340,7 +3394,21 @@ function renderRecentProjects() {
     detail.textContent = item.count + " 张 · " + new Date(item.time).toLocaleString("zh-CN",
       {month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit"});
     button.append(cover, name, detail);
-    button.onclick = () => openProject(item.id);
+    button.onclick = () => {
+      closeRecentContext();
+      openProject(item.id);
+    };
+    button.addEventListener("contextmenu", event => {
+      event.preventDefault();
+      const rect = button.getBoundingClientRect();
+      openRecentContext(item, button, event.clientX || rect.left, event.clientY || rect.bottom);
+    });
+    button.addEventListener("keydown", event => {
+      if (event.key !== "ContextMenu" && !(event.shiftKey && event.key === "F10")) return;
+      event.preventDefault();
+      const rect = button.getBoundingClientRect();
+      openRecentContext(item, button, rect.left, rect.bottom);
+    });
     return button;
   }));
 }
