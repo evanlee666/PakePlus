@@ -387,3 +387,13 @@ button.paper-color[aria-pressed="true"] { border-color: var(--accent-outline); b
 .brush-panel legend { color: var(--ink); padding-inline: 4px; }
 .brush-panel small { color: var(--muted); }
 #film.brush-mode { cursor: crosshair; }
+.recent-context {
+  position: fixed;
+  z-index: 20;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px #0007;
+}
+.recent-context .button { white-space: nowrap; }
